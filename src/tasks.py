@@ -17,31 +17,33 @@ import subprocess
 from openrelik_worker_common.file_utils import create_output_file
 from openrelik_worker_common.task_utils import create_task_result, get_input_files
 
+from ssh_analyzer import LinuxSSHAnalysisTask
+
 from .app import celery
 
 # Task name used to register and route the task to the correct queue.
-TASK_NAME = "your-worker-package-name.tasks.your_task_name"
+TASK_NAME = "openrelik-worker-analyzer-logs.tasks.ssh_analyzer"
 
 # Task metadata for registration in the core system.
 TASK_METADATA = {
-    "display_name": "<REPLACE_WITH_NAME_OF_THE_WORKER>",
-    "description": "<REPLACE_WITH_DESCRIPTION_OF_THE_WORKER>",
+    "display_name": "SSH login analyzer",
+    "description": "Search for suspicious SSH login events in system logs",
     # Configuration that will be rendered as a web for in the UI, and any data entered
     # by the user will be available to the task function when executing (task_config).
-    "task_config": [
-        {
-            "name": "<REPLACE_WITH_NAME>",
-            "label": "<REPLACE_WITH_LABEL>",
-            "description": "<REPLACE_WITH_DESCRIPTION>",
-            "type": "<REPLACE_WITH_TYPE>",  # Types supported: text, textarea, checkbox
-            "required": False,
-        },
-    ],
+    # "task_config": [
+    #     {
+    #         "name": "<REPLACE_WITH_NAME>",
+    #         "label": "<REPLACE_WITH_LABEL>",
+    #         "description": "<REPLACE_WITH_DESCRIPTION>",
+    #         "type": "<REPLACE_WITH_TYPE>",  # Types supported: text, textarea, checkbox
+    #         "required": False,
+    #     },
+    # ],
 }
 
 
 @celery.task(bind=True, name=TASK_NAME, metadata=TASK_METADATA)
-def command(
+def ssh_analyzer(
     self,
     pipe_result: str = None,
     input_files: list = None,
@@ -63,30 +65,113 @@ def command(
     """
     input_files = get_input_files(pipe_result, input_files or [])
     output_files = []
-    base_command = ["<REPLACE_WITH_COMMAND>"]
-    base_command_string = " ".join(base_command)
+
+    ssh_analysis_task = LinuxSSHAnalysisTask()
 
     for input_file in input_files:
         output_file = create_output_file(
             output_path,
             display_name=input_file.get("display_name"),
-            file_extension="<REPLACE_WITH_FILE_EXTENSION>",
-            data_type="<[OPTIONAL]_REPLACE_WITH_DATA_TYPE>",
+            extension=".ssh_report.txt",
+            data_type="openrelik:ssh:report",
         )
-        command = base_command + [input_file.get("path")]
-
-        # Run the command
-        with open(output_file.path, "w") as fh:
-            subprocess.Popen(command, stdout=fh)
-
+        with open(output_file.path, "w") as outfile:
+            with open(input_file.get("path", "r")) as infile:
+                for line in infile:
+                    if "ssh" in line:
+                        outfile.write(line)
+                
         output_files.append(output_file.to_dict())
 
     if not output_files:
-        raise RuntimeError("<REPLACE_WITH_ERROR_STRING>")
+        raise RuntimeError("No output files")
 
     return create_task_result(
         output_files=output_files,
         workflow_id=workflow_id,
-        command=base_command_string,
+        # command=base_command_string,
         meta={},
     )
+
+def run(
+      self, evidence: Evidence,
+      result: TurbiniaTaskResult) -> TurbiniaTaskResult:
+    """Runs the SSH Auth Analyzer worker.
+
+    Args:
+      evidence (Evidence object): The evidence being processed by analyzer.
+      result (TurbiniaTaskResult): The object to place task results into.
+
+    Returns:
+      TurbiniaTaskResult object.
+    """
+
+    # Output file and evidence
+    output_file_name = 'linux_ssh_analysis.md'
+    output_file_path = os.path.join(self.output_dir, output_file_name)
+    output_evidence = ReportText(source_path=output_file_path)
+
+    # Analyzer outputs
+    analyzer_output_priority = Priority.LOW
+    analyzer_output_summary = ''
+    analyzer_output_report = ''
+    output_summary_list = []
+    output_report_list = []
+
+    try:
+      collected_artifacts = extract_artifacts(
+          artifact_names=['LinuxAuthLogs'], disk_path=evidence.local_path,
+          output_dir=self.output_dir, credentials=evidence.credentials)
+      result.log(f'collected artifacts: {collected_artifacts}')
+    except TurbiniaException as exception:
+      result.close(self, success=False, status=str(exception))
+      return result
+
+    log_dir = os.path.join(self.output_dir, 'var', 'log')
+    result.log(f'Checking log directory {log_dir}')
+
+    if not os.path.exists(log_dir):
+      summary = f'No SSH log directory in {log_dir}'
+      result.close(self, success=True, status=summary)
+      return result
+
+    df = self.read_logs(log_dir=log_dir)
+    if df.empty:
+      summary = f'No SSH authentication events in {evidence.local_path}.'
+      result.close(self, success=True, status=summary)
+      return result
+
+    # 01. Brute Force Analyzer
+    (result_priority, result_summary,
+     result_markdown) = self.brute_force_analysis(df)
+    if result_priority < analyzer_output_priority:
+      analyzer_output_priority = result_priority
+    output_summary_list.append(result_summary)
+    output_report_list.append(result_markdown)
+
+    # TODO(rmaskey): 02. Last X-Days Analyzer
+    # TODO(rmaskey): 03. NICE Analyzer
+
+    # 04. Handling result
+    if output_summary_list:
+      analyzer_output_summary = '. '.join(output_summary_list)
+    else:
+      analyzer_output_summary = 'No findings for SSH authentication analyzer.'
+
+    if output_report_list:
+      analyzer_output_report = '\n'.join(output_report_list)
+    else:
+      analyzer_output_report = 'No finding for SSH authentication analyzer.'
+
+    result.report_priority = analyzer_output_priority
+    result.report_data = analyzer_output_report
+    output_evidence.text_data = analyzer_output_report
+
+    # 05. Write the report to the output file.
+    with open(output_file_path, 'wb') as fh:
+      fh.write(output_evidence.text_data.encode('utf-8'))
+
+    # Add the resulting evidence to the result object.
+    result.add_evidence(output_evidence, evidence.config)
+    result.close(self, success=True, status=analyzer_output_summary)
+    return result
