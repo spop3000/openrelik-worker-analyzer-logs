@@ -7,7 +7,8 @@ import gzip
 
 from datetime import datetime, timezone
 from typing import Tuple, List
-
+from auth import BruteForceAnalyzer
+from openrelik_worker_common.reporting import Priority
 
 log = logging.getLogger(__name__)
 
@@ -315,4 +316,59 @@ class LinuxSSHAnalysisTask:
     log.info(
         'Total number of SSH records %d in %s', len(ssh_records), log_filename)
     return ssh_records
+
+  def get_priority_value(self, priority_string: str) -> Priority:
+    """Returns priority value.
+
+    Args:
+      priority_string (str): Priority values as string e.g. HIGH, MEDIUM, LOW
+
+    Returns:
+      Priority: Returns priority value of priority_string.
+    """
+    analyzer_priority_string = priority_string.upper()
+
+    try:
+      return Priority[analyzer_priority_string]
+    except KeyError:
+      log.error(
+          'Priority %s does not exist. Returning LOW', analyzer_priority_string)
+      return Priority.LOW
+
+
+  def brute_force_analysis(self, df: pd.DataFrame) -> Tuple[Priority, str, str]:
+    """Runs brute force analysis.
+
+    Args:
+      df (pd.DataFrame): Pandas dataframe of SSH events.
+
+    Returns:
+      Tuple[Priority, str, str]: Returns brute force analysis result as tuple.
+        Priority: Priority of the findings.
+        str: Brief summary of the findings.
+        str: Detailed information as markdown.
+    """
+    bfa = BruteForceAnalyzer()
+
+    try:
+      bfa_result = bfa.run(df)
+      if not bfa_result:
+        return (
+            Priority.LOW, 'No findings for brute force analysis',
+            '##### Brute force analysis\n\n- No findings')
+      result_priority = bfa_result.result_priority
+      result_summary = bfa_result.result_summary
+      result_markdown = bfa_result.result_markdown
+
+      priority = self.get_priority_value(result_priority)
+
+      if not result_summary:
+        result_summary = 'No findings for brute force analysis'
+      if not result_markdown:
+        result_markdown = '##### Brute Force Analysis\n\n- No findings'
+
+      return (priority, result_summary, result_markdown)
+    except Exception as exception:
+      log.error('Unable to run brute force analyzer. %s', str(exception))
+      return (Priority.LOW, '', '')
 
