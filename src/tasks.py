@@ -19,7 +19,7 @@ from openrelik_worker_common.reporting import Report, Priority
 from openrelik_worker_common.file_utils import create_output_file
 from openrelik_worker_common.task_utils import create_task_result, get_input_files
 
-from ssh_analyzer import LinuxSSHAnalysisTask
+from .ssh_analyzer import LinuxSSHAnalysisTask
 
 from .app import celery
 
@@ -44,7 +44,7 @@ TASK_METADATA = {
 }
 
 
-# @celery.task(bind=True, name=TASK_NAME, metadata=TASK_METADATA)
+@celery.task(bind=True, name=TASK_NAME, metadata=TASK_METADATA)
 def run_ssh_analyzer(
     self,
     pipe_result: str = None,

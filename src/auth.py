@@ -22,7 +22,7 @@ from datetime import datetime, timezone
 from typing import List, Tuple
 
 from openrelik_worker_common.reporting import Report, Priority
-from analyzer_output import AnalyzerOutput
+from .analyzer_output import AnalyzerOutput
 
 log = logging.getLogger(__name__)
 

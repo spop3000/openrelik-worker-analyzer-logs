@@ -16,7 +16,6 @@
 
 import pytest
 import datetime
-import mock
 import os
 import pandas as pd
 import shutil
