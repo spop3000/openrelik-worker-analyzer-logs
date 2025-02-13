@@ -21,7 +21,7 @@ from openrelik_worker_common.task_utils import create_task_result, get_input_fil
 
 from ssh_analyzer import LinuxSSHAnalysisTask
 
-# from app import celery
+from .app import celery
 
 # Task name used to register and route the task to the correct queue.
 TASK_NAME = "openrelik-worker-analyzer-logs.tasks.ssh_analyzer"
