@@ -2,7 +2,7 @@ import pytest
 import base64
 import json
 import filecmp
-from tasks import run_ssh_analyzer
+from src.tasks import run_ssh_analyzer
 
 _INPUT_FILES = [{'id': 1, 'uuid': '445027ec76ef42f8a463fdbaf162d2b7', 'display_name': 'secure', 'extension': '', 'data_type': 'file:generic', 'path': 'test_data/secure'}]
 

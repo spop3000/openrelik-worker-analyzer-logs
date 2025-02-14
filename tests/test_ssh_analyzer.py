@@ -20,7 +20,7 @@ import os
 import pandas as pd
 import shutil
 
-import ssh_analyzer
+import src.ssh_analyzer as ssh_analyzer
 
 from openrelik_worker_common.reporting import Priority
 

@@ -22,12 +22,9 @@ import textwrap
 import pytest
 import datetime
 
-from analyzer_output import AnalyzerOutput
-from auth import AuthAnalyzer
-from auth import AuthSummaryData
-from auth import BruteForceAnalyzer
-from auth import LoginRecord
-from ssh_analyzer import LinuxSSHAnalysisTask
+from src.analyzer_output import AnalyzerOutput
+from src.auth import AuthAnalyzer, AuthSummaryData, BruteForceAnalyzer, LoginRecord
+from src.ssh_analyzer import LinuxSSHAnalysisTask
 
 log = logging.getLogger(__name__)
 log.addHandler(logging.StreamHandler(sys.stdout))
