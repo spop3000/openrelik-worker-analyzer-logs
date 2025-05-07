@@ -32,15 +32,15 @@ TASK_METADATA = {
     "description": "Search for suspicious SSH login events in system logs",
     # Configuration that will be rendered as a web for in the UI, and any data entered
     # by the user will be available to the task function when executing (task_config).
-    # "task_config": [
-    #     {
-    #         "name": "<REPLACE_WITH_NAME>",
-    #         "label": "<REPLACE_WITH_LABEL>",
-    #         "description": "<REPLACE_WITH_DESCRIPTION>",
-    #         "type": "<REPLACE_WITH_TYPE>",  # Types supported: text, textarea, checkbox
-    #         "required": False,
-    #     },
-    # ],
+    "task_config": [
+        {
+            "name": "Log year for SSH events",
+            "label": "log_year",
+            "description": "The log year is not captured by syslog. It can be provided manually, or guessed based on the last SSH event and current date/time.",
+            "type": "text",  # Types supported: text, textarea, checkbox
+            "required": False,
+        },
+    ],
 }
 
 
@@ -68,126 +68,42 @@ def run_ssh_analyzer(
     input_files = get_input_files(pipe_result, input_files or [])
     output_files = []
 
+    task_report = Report("SSH log analyzer report")
+
     ssh_analysis_task = LinuxSSHAnalysisTask()
     analyzer_output_priority = Priority.LOW
-    analyzer_output_summary = ''
-    analyzer_output_report = ''
-    output_summary_list = []
-    output_report_list = []
 
     df = ssh_analysis_task.read_logs(input_files=input_files)
     if df.empty:
-      summary = f'No SSH authentication events in {input_files}.'
-      return summary
+        task_report.summary = "No SSH authentication events in input files."
 
-    # 01. Brute Force Analyzer
-    (result_priority, result_summary,
-     result_markdown) = ssh_analysis_task.brute_force_analysis(df)
-    if result_priority < analyzer_output_priority:
-      analyzer_output_priority = result_priority
-    output_summary_list.append(result_summary)
-    output_report_list.append(result_markdown)
+    else:
 
+        # 01. Brute Force Analyzer
+        (result_priority, result_summary, result_markdown) = (
+            ssh_analysis_task.brute_force_analysis(df)
+        )
+        if result_priority < analyzer_output_priority:
+            analyzer_output_priority = result_priority
+        task_report.summary = result_summary
 
-    output_file = create_output_file(
-        output_path,
-        display_name="linux_ssh_analysis",
-        extension=".md",
-        data_type="openrelik:ssh:report",
-    )
-    with open(output_file.path, "w") as outfile:
-      outfile.write(result_markdown)
-            
-    output_files.append(output_file.to_dict())
+        output_file = create_output_file(
+            output_path,
+            display_name="linux_ssh_analysis",
+            extension=".md",
+            data_type="openrelik:ssh:report",
+        )
+        with open(output_file.path, "w") as outfile:
+            outfile.write(result_markdown)
 
-    if not output_files:
-        raise RuntimeError("No output files")
+        output_files.append(output_file.to_dict())
+
+        if not output_files:
+            raise RuntimeError("No output files")
 
     return create_task_result(
         output_files=output_files,
         workflow_id=workflow_id,
+        task_report=task_report,
         meta={},
     )
-
-# def run(
-#       self, evidence: Evidence,
-#       result: TurbiniaTaskResult) -> TurbiniaTaskResult:
-#     """Runs the SSH Auth Analyzer worker.
-
-#     Args:
-#       evidence (Evidence object): The evidence being processed by analyzer.
-#       result (TurbiniaTaskResult): The object to place task results into.
-
-#     Returns:
-#       TurbiniaTaskResult object.
-#     """
-
-#     # Output file and evidence
-#     output_file_name = 'linux_ssh_analysis.md'
-#     output_file_path = os.path.join(self.output_dir, output_file_name)
-#     output_evidence = ReportText(source_path=output_file_path)
-
-#     # Analyzer outputs
-#     analyzer_output_priority = Priority.LOW
-#     analyzer_output_summary = ''
-#     analyzer_output_report = ''
-#     output_summary_list = []
-#     output_report_list = []
-
-#     try:
-#       collected_artifacts = extract_artifacts(
-#           artifact_names=['LinuxAuthLogs'], disk_path=evidence.local_path,
-#           output_dir=self.output_dir, credentials=evidence.credentials)
-#       result.log(f'collected artifacts: {collected_artifacts}')
-#     except TurbiniaException as exception:
-#       result.close(self, success=False, status=str(exception))
-#       return result
-
-#     log_dir = os.path.join(self.output_dir, 'var', 'log')
-#     result.log(f'Checking log directory {log_dir}')
-
-#     if not os.path.exists(log_dir):
-#       summary = f'No SSH log directory in {log_dir}'
-#       result.close(self, success=True, status=summary)
-#       return result
-
-#     df = self.read_logs(log_dir=log_dir)
-#     if df.empty:
-#       summary = f'No SSH authentication events in {evidence.local_path}.'
-#       result.close(self, success=True, status=summary)
-#       return result
-
-#     # 01. Brute Force Analyzer
-#     (result_priority, result_summary,
-#      result_markdown) = self.brute_force_analysis(df)
-#     if result_priority < analyzer_output_priority:
-#       analyzer_output_priority = result_priority
-#     output_summary_list.append(result_summary)
-#     output_report_list.append(result_markdown)
-
-#     # TODO(rmaskey): 02. Last X-Days Analyzer
-#     # TODO(rmaskey): 03. NICE Analyzer
-
-#     # 04. Handling result
-#     if output_summary_list:
-#       analyzer_output_summary = '. '.join(output_summary_list)
-#     else:
-#       analyzer_output_summary = 'No findings for SSH authentication analyzer.'
-
-#     if output_report_list:
-#       analyzer_output_report = '\n'.join(output_report_list)
-#     else:
-#       analyzer_output_report = 'No finding for SSH authentication analyzer.'
-
-#     result.report_priority = analyzer_output_priority
-#     result.report_data = analyzer_output_report
-#     output_evidence.text_data = analyzer_output_report
-
-#     # 05. Write the report to the output file.
-#     with open(output_file_path, 'wb') as fh:
-#       fh.write(output_evidence.text_data.encode('utf-8'))
-
-#     # Add the resulting evidence to the result object.
-#     result.add_evidence(output_evidence, evidence.config)
-#     result.close(self, success=True, status=analyzer_output_summary)
-#     return result
