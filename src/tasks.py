@@ -34,9 +34,9 @@ TASK_METADATA = {
     # by the user will be available to the task function when executing (task_config).
     "task_config": [
         {
-            "name": "Log year for SSH events",
-            "label": "log_year",
-            "description": "The log year is not captured by original syslog. It can be provided manually, or guessed based on the last SSH event and current date/time.",
+            "name": "log_year",
+            "label": "Log year",
+            "description": "Specify log year for SSH events, in case it's not captured by syslog. Otherwise it will be guessed based on the last SSH event and current date/time.",
             "type": "text",  # Types supported: text, textarea, checkbox
             "required": False,
         },
@@ -70,7 +70,12 @@ def run_ssh_analyzer(
 
     task_report = Report("SSH log analyzer report")
 
-    ssh_analysis_task = LinuxSSHAnalysisTask()
+    try:
+        log_year = int(task_config.get('log_year'))
+    except (TypeError, ValueError):
+        log_year = None 
+
+    ssh_analysis_task = LinuxSSHAnalysisTask(log_year=log_year)
     analyzer_output_priority = Priority.LOW
 
     df = ssh_analysis_task.read_logs(input_files=input_files)
@@ -104,6 +109,6 @@ def run_ssh_analyzer(
     return create_task_result(
         output_files=output_files,
         workflow_id=workflow_id,
-        task_report=task_report,
+        # task_report=task_report,
         meta={},
     )

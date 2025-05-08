@@ -80,6 +80,14 @@ class TestLinuxSSHAnalysisTask:
         result = analyzer.read_logs(input_files=_INPUT_FILES)
         assert len(result) == 27719
 
+    def test_read_logs_with_log_year(self):
+        """Test read_logs method when log_year parameter is specified."""
+        analyzer = ssh_analyzer.LinuxSSHAnalysisTask(log_year=2019)
+
+        print("[+] Checking test_data/secure as input_files")
+        result = analyzer.read_logs(input_files=_INPUT_FILES)
+        assert str(result['date'].iloc[0]).startswith('2019')
+
     @pytest.mark.skipif(
         datetime.datetime.now().astimezone().tzname() != "UTC",
         reason="This test must be run on a UTC-configured machine",
@@ -115,7 +123,6 @@ class TestLinuxSSHAnalysisTask:
         # Invalid datetime random
         output = analyzer.parse_message_datetime(["random"], log_year=0)
         assert output is None
-
 
 class TurbiniaTaskResult:
     pass

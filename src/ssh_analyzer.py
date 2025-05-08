@@ -161,6 +161,9 @@ class LinuxSSHAnalysisTask:
         "disconnected": _DISCONNECT_GRAMMAR,
     }
 
+    def __init__(self, log_year=None):
+        self.log_year = log_year
+
     def read_logs(self, input_files: list) -> pd.DataFrame:
         """Reads SSH logs directory and returns Pandas dataframe.
 
@@ -194,7 +197,7 @@ class LinuxSSHAnalysisTask:
                     with gzip.open(log_file, "rt", encoding="ISO-8859–1") as fh:
                         log_data = fh.read()
                         records = self.parse_log_data(
-                            log_data, log_filename=log_filename
+                            log_data, log_filename=log_filename, log_year=self.log_year
                         )
                         if records:
                             ssh_records += records
@@ -211,7 +214,9 @@ class LinuxSSHAnalysisTask:
             try:
                 with open(log_file, "r", encoding="ISO-8859–1") as fh:
                     log_data = fh.read()
-                    records = self.parse_log_data(log_data, log_filename=log_filename)
+                    records = self.parse_log_data(
+                        log_data, log_filename=log_filename, log_year=self.log_year
+                    )
                     if records:
                         ssh_records += records
             except (FileNotFoundError, OSError) as e:
