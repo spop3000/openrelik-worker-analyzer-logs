@@ -36,7 +36,7 @@ TASK_METADATA = {
         {
             "name": "Log year for SSH events",
             "label": "log_year",
-            "description": "The log year is not captured by syslog. It can be provided manually, or guessed based on the last SSH event and current date/time.",
+            "description": "The log year is not captured by original syslog. It can be provided manually, or guessed based on the last SSH event and current date/time.",
             "type": "text",  # Types supported: text, textarea, checkbox
             "required": False,
         },
