@@ -7,7 +7,7 @@ import gzip
 
 from datetime import datetime, timezone
 from typing import Tuple, List
-from .auth import BruteForceAnalyzer
+from .auth_log_analyzer import BruteForceAnalyzer
 from openrelik_worker_common.reporting import Priority
 
 log = logging.getLogger(__name__)

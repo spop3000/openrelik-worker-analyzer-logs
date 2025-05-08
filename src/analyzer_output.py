@@ -23,10 +23,10 @@ class AnalyzerOutput:
     """A class to record analyzer output.
 
     Attributes:
-      platform (str): [Required] Analyzer platform.
       analyzer_identifier (str): [Required] Unique analyzer identifier. This
         value may be platform specific.
       analyzer_name (str): [Required] Analyzer name.
+      result_status (str): Result status ("Success" or "Failed")
       dfiq_question_id (str): [Optional] Digital Forensics Investigative Question
         (DFIQ) questions ID.
       dfiq_question_conclusion (str): [Optional] DFQI questions answer/conclusion.
@@ -43,7 +43,6 @@ class AnalyzerOutput:
     """
 
     def __init__(self, analyzer_id: str, analyzer_name: str):
-        self.platform = "turbinia"
         self.analyzer_identifier = analyzer_id
         self.analyzer_name = analyzer_name
         self.result_status = "Success"

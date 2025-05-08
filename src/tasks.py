@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import subprocess
-import pandas as pd
 
 from openrelik_worker_common.reporting import Report, Priority
 from openrelik_worker_common.file_utils import create_output_file
@@ -28,7 +27,7 @@ TASK_NAME = "openrelik-worker-analyzer-logs.tasks.ssh_analyzer"
 
 # Task metadata for registration in the core system.
 TASK_METADATA = {
-    "display_name": "SSH login analyzer",
+    "display_name": "pyproject",
     "description": "Search for suspicious SSH login events in system logs",
     # Configuration that will be rendered as a web for in the UI, and any data entered
     # by the user will be available to the task function when executing (task_config).
@@ -71,9 +70,9 @@ def run_ssh_analyzer(
     task_report = Report("SSH log analyzer report")
 
     try:
-        log_year = int(task_config.get('log_year'))
+        log_year = int(task_config.get("log_year"))
     except (TypeError, ValueError):
-        log_year = None 
+        log_year = None
 
     ssh_analysis_task = LinuxSSHAnalysisTask(log_year=log_year)
     analyzer_output_priority = Priority.LOW
@@ -81,9 +80,7 @@ def run_ssh_analyzer(
     df = ssh_analysis_task.read_logs(input_files=input_files)
     if df.empty:
         task_report.summary = "No SSH authentication events in input files."
-
     else:
-
         # 01. Brute Force Analyzer
         (result_priority, result_summary, result_markdown) = (
             ssh_analysis_task.brute_force_analysis(df)
@@ -102,9 +99,6 @@ def run_ssh_analyzer(
             outfile.write(result_markdown)
 
         output_files.append(output_file.to_dict())
-
-        if not output_files:
-            raise RuntimeError("No output files")
 
     return create_task_result(
         output_files=output_files,
