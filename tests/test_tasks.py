@@ -1,4 +1,3 @@
-import pytest
 import base64
 import json
 import filecmp
@@ -21,7 +20,10 @@ class TestTasks:
         """Test LinuxSSHAnalysis task run."""
 
         output = run_ssh_analyzer(
-            input_files=_INPUT_FILES, output_path="/tmp", workflow_id="deadbeef", task_config={}
+            input_files=_INPUT_FILES,
+            output_path="/tmp",
+            workflow_id="deadbeef",
+            task_config={},
         )
 
         output_dict = json.loads(base64.b64decode(output))

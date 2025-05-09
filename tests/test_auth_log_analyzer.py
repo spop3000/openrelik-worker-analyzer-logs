@@ -23,7 +23,12 @@ import pytest
 import datetime
 
 from src.analyzer_output import AnalyzerOutput
-from src.auth_log_analyzer import AuthAnalyzer, AuthSummaryData, BruteForceAnalyzer, LoginRecord
+from src.auth_log_analyzer import (
+    AuthAnalyzer,
+    AuthSummaryData,
+    BruteForceAnalyzer,
+    LoginRecord,
+)
 from src.ssh_analyzer import LinuxSSHAnalysisTask
 
 log = logging.getLogger(__name__)

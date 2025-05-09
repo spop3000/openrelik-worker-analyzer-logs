@@ -17,12 +17,10 @@
 import pytest
 import datetime
 import os
-import pandas as pd
 import shutil
 
 import src.ssh_analyzer as ssh_analyzer
 
-from openrelik_worker_common.reporting import Priority
 
 _INPUT_FILES = [
     {
@@ -86,7 +84,7 @@ class TestLinuxSSHAnalysisTask:
 
         print("[+] Checking test_data/secure as input_files")
         result = analyzer.read_logs(input_files=_INPUT_FILES)
-        assert str(result['date'].iloc[0]).startswith('2019')
+        assert str(result["date"].iloc[0]).startswith("2019")
 
     @pytest.mark.skipif(
         datetime.datetime.now().astimezone().tzname() != "UTC",
@@ -123,6 +121,7 @@ class TestLinuxSSHAnalysisTask:
         # Invalid datetime random
         output = analyzer.parse_message_datetime(["random"], log_year=0)
         assert output is None
+
 
 class TurbiniaTaskResult:
     pass

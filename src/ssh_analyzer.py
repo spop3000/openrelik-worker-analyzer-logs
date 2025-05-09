@@ -67,7 +67,6 @@ class SSHEventData:
 
 
 class LinuxSSHAnalysisTask:
-
     # Log year validation
     # The minimum supported log year
     # NOTE: Python supports 1 as minimum year in datetime

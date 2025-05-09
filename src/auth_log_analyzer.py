@@ -21,7 +21,7 @@ import pandas as pd
 from datetime import datetime, timezone
 from typing import List, Tuple
 
-from openrelik_worker_common.reporting import Report, Priority
+from openrelik_worker_common.reporting import Priority
 from .analyzer_output import AnalyzerOutput
 
 log = logging.getLogger(__name__)
@@ -740,7 +740,7 @@ class BruteForceAnalyzer(AuthAnalyzer):
                 log.info("[%s] No failed login events for %s.", self.NAME, source_ip)
 
             log.debug(
-                "[%s] Login events distribution from %s:" " successful %d, failure %d",
+                "[%s] Login events distribution from %s: successful %d, failure %d",
                 self.NAME,
                 source_ip,
                 success_count,
