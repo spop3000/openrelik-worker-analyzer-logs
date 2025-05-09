@@ -21,7 +21,7 @@ class TestTasks:
         """Test LinuxSSHAnalysis task run."""
 
         output = run_ssh_analyzer(
-            self, input_files=_INPUT_FILES, output_path="/tmp", workflow_id="deadbeef"
+            input_files=_INPUT_FILES, output_path="/tmp", workflow_id="deadbeef", task_config={}
         )
 
         output_dict = json.loads(base64.b64decode(output))
