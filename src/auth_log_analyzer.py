@@ -16,10 +16,10 @@
 
 import copy
 import logging
-import pandas as pd
-
 from datetime import datetime, timezone
 from typing import List, Tuple
+
+import pandas as pd
 
 from openrelik_worker_common.reporting import Priority
 from .analyzer_output import AnalyzerOutput

@@ -16,11 +16,12 @@
 
 import logging
 import os
-import pandas as pd
 import sys
 import textwrap
-import pytest
 import datetime
+
+import pandas as pd
+import pytest
 
 from src.analyzer_output import AnalyzerOutput
 from src.auth_log_analyzer import (
