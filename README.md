@@ -9,7 +9,7 @@ Add the below configuration to the OpenRelik `docker-compose.yml` file.
 ```
   openrelik-worker-analyzer-logs:
       container_name: openrelik-worker-analyzer-logs
-      image: openrelik-worker-analyzer-logs
+      image: ghcr.io/openrelik/openrelik-worker-analyzer-logs:${OPENRELIK_WORKER_ANALYZER_LOGS_VERSION}
       restart: always
       environment:
         - REDIS_URL=redis://openrelik-redis:6379
