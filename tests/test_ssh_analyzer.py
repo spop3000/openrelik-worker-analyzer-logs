@@ -37,23 +37,6 @@ _INPUT_FILES = [
 class TestLinuxSSHAnalysisTask:
     """Test for LinuxSSHAnalysisTask task."""
 
-    def setUp(self):
-        super(TestLinuxSSHAnalysisTask, self).setUp(
-            task_class=ssh_analyzer.LinuxSSHAnalysisTask
-        )
-
-        self.task.output_dir = self.task.base_output_dir
-        self.output_file_path = os.path.join(
-            self.task.output_dir, "linux_ssh_analysis.md"
-        )
-        self.remove_files.append(self.output_file_path)
-        os.makedirs(os.path.join(self.task.output_dir, "var", "log"))
-        self.setResults(mock_run=False)
-
-    def tearDown(self):
-        if os.path.exists(self.base_output_dir):
-            shutil.rmtree(self.base_output_dir)
-
     def test_parse_log_data(self):
         """Test parsing SSH log file"""
         log_file = os.path.join("test_data", "secure")
@@ -121,7 +104,3 @@ class TestLinuxSSHAnalysisTask:
         # Invalid datetime random
         output = analyzer.parse_message_datetime(["random"], log_year=0)
         assert output is None
-
-
-class TurbiniaTaskResult:
-    pass
