@@ -493,7 +493,7 @@ class AuthAnalyzer:
         if not useraccount:
             return "", ""
 
-        if not "\\" in useraccount:
+        if "\\" not in useraccount:
             return "", useraccount
 
         val = useraccount.split("\\")
