@@ -1,16 +1,28 @@
 [tool.poetry]
 name = "openrelik-worker-template"
 version = "2024.11.27"
-description = "Description of the worker"
-authors = ["YOUR NAME <email@example.com>"]
+description = "SSH login analyzer"
+authors = ["Slobodan Popović <spop@google.com>"]
 readme = "README.md"
 package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.10"
 celery = {extras = ["redis"], version = "^5.4.0"}
-openrelik-worker-common = "^2024.11.27"
+openrelik-worker-common = "^0.12.0"
+pandas = "^2.2.3"
+pyparsing = "^3.2.0"
+debugpy = "^1.8.7"
+
+[tool.poetry.group.test.dependencies]  
+pytest = "^7.4"  
+pytest-cov = "*"  
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["tests.py", "test_*.py"]
+pythonpath = [".", "src"]

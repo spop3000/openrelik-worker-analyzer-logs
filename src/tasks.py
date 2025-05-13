@@ -12,28 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import subprocess
-
+from openrelik_worker_common.reporting import Report, Priority
 from openrelik_worker_common.file_utils import create_output_file
 from openrelik_worker_common.task_utils import create_task_result, get_input_files
+
+from .ssh_analyzer import LinuxSSHAnalysisTask
 
 from .app import celery
 
 # Task name used to register and route the task to the correct queue.
-TASK_NAME = "your-worker-package-name.tasks.your_task_name"
+TASK_NAME = "openrelik-worker-analyzer-logs.tasks.ssh_analyzer"
 
 # Task metadata for registration in the core system.
 TASK_METADATA = {
-    "display_name": "<REPLACE_WITH_NAME_OF_THE_WORKER>",
-    "description": "<REPLACE_WITH_DESCRIPTION_OF_THE_WORKER>",
+    "display_name": "pyproject",
+    "description": "Search for suspicious SSH login events in system logs",
     # Configuration that will be rendered as a web for in the UI, and any data entered
     # by the user will be available to the task function when executing (task_config).
     "task_config": [
         {
-            "name": "<REPLACE_WITH_NAME>",
-            "label": "<REPLACE_WITH_LABEL>",
-            "description": "<REPLACE_WITH_DESCRIPTION>",
-            "type": "<REPLACE_WITH_TYPE>",  # Types supported: text, textarea, checkbox
+            "name": "log_year",
+            "label": "Log year",
+            "description": "Specify log year for SSH events, in case it's not captured by syslog. Otherwise it will be guessed based on the last SSH event and current date/time.",
+            "type": "text",  # Types supported: text, textarea, checkbox
             "required": False,
         },
     ],
@@ -41,7 +42,7 @@ TASK_METADATA = {
 
 
 @celery.task(bind=True, name=TASK_NAME, metadata=TASK_METADATA)
-def command(
+def run_ssh_analyzer(
     self,
     pipe_result: str = None,
     input_files: list = None,
@@ -63,30 +64,42 @@ def command(
     """
     input_files = get_input_files(pipe_result, input_files or [])
     output_files = []
-    base_command = ["<REPLACE_WITH_COMMAND>"]
-    base_command_string = " ".join(base_command)
 
-    for input_file in input_files:
+    task_report = Report("SSH log analyzer report")
+
+    try:
+        log_year = int(task_config.get("log_year"))
+    except (TypeError, ValueError):
+        log_year = None
+
+    ssh_analysis_task = LinuxSSHAnalysisTask(log_year=log_year)
+    analyzer_output_priority = Priority.LOW
+
+    df = ssh_analysis_task.read_logs(input_files=input_files)
+    if df.empty:
+        task_report.summary = "No SSH authentication events in input files."
+    else:
+        # 01. Brute Force Analyzer
+        (result_priority, result_summary, result_markdown) = (
+            ssh_analysis_task.brute_force_analysis(df)
+        )
+        if result_priority < analyzer_output_priority:
+            analyzer_output_priority = result_priority
+        task_report.summary = result_summary
+
         output_file = create_output_file(
             output_path,
-            display_name=input_file.get("display_name"),
-            file_extension="<REPLACE_WITH_FILE_EXTENSION>",
-            data_type="<[OPTIONAL]_REPLACE_WITH_DATA_TYPE>",
+            display_name="linux_ssh_analysis",
+            extension=".md",
+            data_type="openrelik:ssh:report",
         )
-        command = base_command + [input_file.get("path")]
-
-        # Run the command
-        with open(output_file.path, "w") as fh:
-            subprocess.Popen(command, stdout=fh)
+        with open(output_file.path, "w") as outfile:
+            outfile.write(result_markdown)
 
         output_files.append(output_file.to_dict())
-
-    if not output_files:
-        raise RuntimeError("<REPLACE_WITH_ERROR_STRING>")
 
     return create_task_result(
         output_files=output_files,
         workflow_id=workflow_id,
-        command=base_command_string,
         meta={},
     )
