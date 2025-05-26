@@ -86,12 +86,7 @@ def run_ssh_analyzer(
         )
         if result_priority < analyzer_output_priority:
             analyzer_output_priority = result_priority
-        if result_summary is None:
-            summary_section.add_paragraph(
-                "No suspicious SSH authentication events found."
-            )
-        else:
-            summary_section.add_paragraph(result_summary)
+        summary_section.add_paragraph(result_summary)
 
         output_file = create_output_file(
             output_path,
