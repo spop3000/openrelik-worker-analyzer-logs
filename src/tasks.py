@@ -66,6 +66,7 @@ def run_ssh_analyzer(
     output_files = []
 
     task_report = Report("SSH log analyzer report")
+    summary_section = task_report.add_section()
 
     try:
         log_year = int(task_config.get("log_year"))
@@ -77,7 +78,7 @@ def run_ssh_analyzer(
 
     df = ssh_analysis_task.read_logs(input_files=input_files)
     if df.empty:
-        task_report.summary = "No SSH authentication events in input files."
+        summary_section.add_paragraph("No SSH authentication events in input files.")
     else:
         # 01. Brute Force Analyzer
         (result_priority, result_summary, result_markdown) = (
@@ -85,7 +86,12 @@ def run_ssh_analyzer(
         )
         if result_priority < analyzer_output_priority:
             analyzer_output_priority = result_priority
-        task_report.summary = result_summary
+        if result_summary is None:
+            summary_section.add_paragraph(
+                "No suspicious SSH authentication events found."
+            )
+        else:
+            summary_section.add_paragraph(result_summary)
 
         output_file = create_output_file(
             output_path,
@@ -101,5 +107,6 @@ def run_ssh_analyzer(
     return create_task_result(
         output_files=output_files,
         workflow_id=workflow_id,
+        task_report=task_report.to_dict(),
         meta={},
     )
