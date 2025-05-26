@@ -28,6 +28,28 @@ _INPUT_FILES = [
     }
 ]
 
+_INPUT_FILES_SSH_EVENTS_NO_BRUTEFORCE = [
+    {
+        "id": 1,
+        "uuid": "445027ec76ef42f8a463fdbaf162d2b9",
+        "display_name": "secure.1",
+        "extension": "",
+        "data_type": "file:generic",
+        "path": "test_data/secure.1",
+    }
+]
+
+_INPUT_FILES_WITHOUT_SSH_EVENTS = [
+    {
+        "id": 1,
+        "uuid": "445027ec76ef42f8a463fdbaf162d2b8",
+        "display_name": "shadow",
+        "extension": "",
+        "data_type": "file:generic",
+        "path": "test_data/shadow",
+    }
+]
+
 
 class TestTasks:
     def test_run_ssh_analyzer(self):
@@ -45,3 +67,33 @@ class TestTasks:
         assert filecmp.cmp(
             output_path, "test_data/linux_ssh_analysis.md", shallow=False
         )
+
+    def test_task_report_no_ssh_events(self):
+        """Test for proper task report summary."""
+
+        output = run_ssh_analyzer(
+            input_files=_INPUT_FILES_WITHOUT_SSH_EVENTS,
+            output_path="/tmp",
+            workflow_id="deadbeef",
+            task_config={},
+        )
+
+        output_dict = json.loads(base64.b64decode(output))
+        output_task_report_summary = output_dict.get("task_report").get("content")
+        assert (
+            "No SSH authentication events in input files." in output_task_report_summary
+        )
+
+    def test_task_report_no_bruteforce(self):
+        """Test for proper task report summary."""
+
+        output = run_ssh_analyzer(
+            input_files=_INPUT_FILES_SSH_EVENTS_NO_BRUTEFORCE,
+            output_path="/tmp",
+            workflow_id="deadbeef",
+            task_config={},
+        )
+
+        output_dict = json.loads(base64.b64decode(output))
+        output_task_report_summary = output_dict.get("task_report").get("content")
+        assert "No findings for brute force analysis" in output_task_report_summary
