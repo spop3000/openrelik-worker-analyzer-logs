@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/github/openrelik/openrelik-worker-analyzer-logs/graph/badge.svg?token=U1OAOQSX7K)](https://codecov.io/github/openrelik/openrelik-worker-analyzer-logs)
+
 # Openrelik worker for analyzing logs
 OpenRelik Logs Analyzer worker is responsible for log analysis. Tasks that read (multiple) logs can be added to this worker.
 
