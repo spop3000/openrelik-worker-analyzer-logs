@@ -25,7 +25,7 @@ TASK_NAME = "openrelik-worker-analyzer-logs.tasks.ssh_analyzer"
 
 # Task metadata for registration in the core system.
 TASK_METADATA = {
-    "display_name": "pyproject",
+    "display_name": "SSH login analyzer",
     "description": "Search for suspicious SSH login events in system logs",
     # Configuration that will be rendered as a web for in the UI, and any data entered
     # by the user will be available to the task function when executing (task_config).
