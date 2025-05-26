@@ -101,6 +101,5 @@ def run_ssh_analyzer(
     return create_task_result(
         output_files=output_files,
         workflow_id=workflow_id,
-        task_report=task_report.to_dict(),
         meta={},
     )
